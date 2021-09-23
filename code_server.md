@@ -1,4 +1,10 @@
-    
+
+fix google cloud key
+
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add - \
+    && sudo apt update -y \
+    && sudo apt upgrade -y
+
 ````bash
 wget https://nodejs.org/dist/v14.17.6/node-v14.17.6-linux-armv7l.tar.xz \
 && tar -xf node-v14.17.6-linux-armv7l.tar.xz \
@@ -45,6 +51,7 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 ````
+
 ````bash
 sudo mkdir /var/lib/code-server && sudo systemctl daemon-reload && sudo systemctl start code-server && sudo systemctl enable code-server
 ````
@@ -60,7 +67,7 @@ To stop the service manually:
 To set opencv to the root python3
     
     # Optional
-    cp /usr/local/lib/python3.7/site-packages/cv2/python-3.7/cv2.py3cv4.1.1.so /usr/local/lib/python3.7/site-packages/cv2/python-3.7/cv2.so    
+    sudo cp /usr/local/lib/python3.7/site-packages/cv2/python-3.7/cv2.py3cv4.1.1.so /usr/local/lib/python3.7/site-packages/cv2/python-3.7/cv2.so    
     
     # Add cv2 to root packages
     sudo cp -r /usr/local/lib/python3.7/site-packages/cv2 /usr/local/lib/python3.7/dist-packages/
@@ -68,3 +75,16 @@ To set opencv to the root python3
 Update pip
 
     /usr/bin/python3 -m pip install --upgrade pip
+
+Set python3 to python and append pythonpath
+
+    sudo nano /root/.bashrc
+
+Add this lines
+
+    alias python=python3
+    export PYTHONPATH="${PYTHONPATH}:/home/pi/home_of_pi"
+
+Then update changes
+
+    source /root/.bashrc
