@@ -1,23 +1,44 @@
-from home_pi.dht import DHT11
 import time
 
-PIN = 17
+from gpiozero import PWMLED, LED
 
-# Start the tempreture sensor
-instance = DHT11(pin=PIN)
+from home_pi.dht import DHT11
 
-# Waity 3s for init
-print("Wait 3s...")
-time.sleep(3)
 
-# Read the sensor
-result = instance.read()
+def step(temperature, humidity, led, fan):
+    """
+    Args:
+        temperature: temperature get from the sensor in "c"
+        humidity: humidity get from the sensor in "%"
+        led: LED to control
+        fan: Fan to control
+    """
+    # Print information
+    print("Temperature:", temperature)
+    print("Humidity:", humidity)
+    # Turn on the LED
+    led.value = 1.0
+    fan.on()
 
-# Check if the result is valid
-if result.is_valid():
-    # Display values
-    print("Temperature: %-3.1f C" % result.temperature)
-    print("Humidity: %-3.1f %%" % result.humidity)
+    # TODO a toi de jouer ici !
 
-# Stop the sensor
-instance.stop()
+
+if __name__ == "__main__":
+    instance = DHT11(pin=4)
+    led = PWMLED(17)
+    fan = LED(14)
+
+    # Wait 3s for init
+    print("Wait 3s...")
+    time.sleep(3)
+
+    try:
+        while True:
+            result = instance.read()
+            if result.is_valid():
+                step(result.temperature, result.humidity, led, fan)
+            time.sleep(3)
+
+    except KeyboardInterrupt:
+        print("Cleanup")
+        instance.stop()
