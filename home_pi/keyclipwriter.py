@@ -19,33 +19,26 @@ class KeyClipWriter:
         # initialize the buffer of frames, queue of frames that
         # need to be written to file, video writer, writer thread,
         # and boolean indicating whether recording has started or not
-        self.frames = deque(maxlen=bufSize)
         self.Q = None
         self.writer = None
         self.thread = None
         self.recording = False
 
     def update(self, frame):
-        # update the frames buffer
-        self.frames.appendleft(frame)
-
         # if we are recording, update the queue as well
         if self.recording:
             self.Q.put(frame)
 
-    def start(self, outputPath, fourcc, fps):
+    def start(self, frame, outputPath, fourcc, fps):
+        print("Start recording")
         # indicate that we are recording, start the video writer,
         # and initialize the queue of frames that need to be written
         # to the video file
         self.recording = True
         self.writer = cv2.VideoWriter(outputPath, fourcc, fps,
-                                      (self.frames[0].shape[1], self.frames[0].shape[0]), True)
+                                      (frame.shape[1], frame.shape[0]), True)
         self.Q = Queue()
-
-        # loop over the frames in the deque structure and add them
-        # to the queue
-        for i in range(len(self.frames), 0, -1):
-            self.Q.put(self.frames[i - 1])
+        self.update(frame)
 
         # start a thread write frames to the video file
         self.thread = Thread(target=self.write, args=())
@@ -78,6 +71,7 @@ class KeyClipWriter:
             self.writer.write(frame)
 
     def finish(self):
+        print("Stop recording")
         # indicate that we are done recording, join the thread,
         # flush all remaining frames in the queue to file, and
         # release the writer pointer

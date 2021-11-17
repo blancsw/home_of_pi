@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import os
 import time
 
 import cv2
@@ -54,7 +55,7 @@ class MotionDetection:
         # boolean used to indicate if the consecutive frames
         # counter should be updated
         frame = self.video_stream.read()
-        frame = imutils.resize(frame, width=600)
+        frame = imutils.resize(frame, width=self.conf["resize"])
 
         # flag to update the counter consecutive frames with no motion
         self.update_consec_frames = True
@@ -81,14 +82,16 @@ class MotionDetection:
             (x, y, w, h) = cv2.boundingRect(c)
             self.update_consec_frames = (w * h) <= self.conf["min_area"]
             if self.update_consec_frames:
+                self.start_recording(frame)
                 self.consec_frames = 0
-                return {
+                return True, {
                     "frame": frame,
                     "x": x,
                     "y": y,
                     "width": w,
                     "height": h
                 }
+        return False, {}
 
     def save_frame(self, frame):
         """
@@ -113,23 +116,6 @@ class MotionDetection:
         if self.kcw.recording and self.consec_frames == self.conf["buffer_size"]:
             self.kcw.finish()
 
-    @staticmethod
-    def draw_rectangle(frame, x, y, w, h, color):
-        """
-
-        Args:
-            frame:
-            x:
-            y:
-            w:
-            h:
-            color:
-
-        Returns:
-
-        """
-        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-
     def is_recording(self):
         """
 
@@ -138,7 +124,7 @@ class MotionDetection:
         """
         return self.kcw.recording
 
-    def start_recording(self):
+    def start_recording(self, frame):
         """
 
         Returns:
@@ -147,8 +133,9 @@ class MotionDetection:
         # if we are not already recording, start recording
         if not self.is_recording():
             timestamp = datetime.datetime.now()
+            os.makedirs(self.conf["output_videos_path"], exist_ok=True)
             path = "{}/{}.avi".format(self.conf["output_videos_path"], timestamp.strftime("%Y%m%d-%H%M%S"))
-            self.kcw.start(path, cv2.VideoWriter_fourcc(*self.conf["codec"]), self.conf["output_fps"])
+            self.kcw.start(frame, path, cv2.VideoWriter_fourcc(*self.conf["codec"]), self.conf["output_fps"])
 
     def __del__(self):
         """
@@ -162,7 +149,4 @@ class MotionDetection:
         # if we are in the middle of recording a clip, wrap it up
         if self.kcw.recording:
             self.kcw.finish()
-
-        # otherwise, release the video file pointer
-        else:
-            self.video_stream.release()
+        self.video_stream.stop()

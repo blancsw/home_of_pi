@@ -1,0 +1,26 @@
+{
+	// flag indicating if pi camera should be used
+	"picamera": true,
+
+	// path to output directory
+	"output_videos_path": "output",
+
+	// fps of output video
+	"output_fps": 32,
+
+	// codec of output video
+	"codec": "MJPG",
+
+	// buffer size of key clip writer
+	"buffer_size": 64,
+
+	// minimum area for motion event
+	"min_area": 10000,
+
+	// MOG background subtraction parameters
+	"mog_history": 500,
+	"mog_nmixtures": 5,
+	"mog_bg_ratio": 0.7,
+	"mog_noise_sigma": 0,
+	"record": false
+}

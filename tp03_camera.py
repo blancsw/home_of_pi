@@ -1,44 +1,29 @@
-import time
+import cv2
+# from gpiozero import PWMLED
 
-from gpiozero import PWMLED
+from home_pi.motion_detection import MotionDetection
 
-from home_pi.dht import DHT11
+# led_move = PWMLED(17)
+# led_not_move = PWMLED(4)
 
+motion = MotionDetection("conf.json")
 
-def step(temperature, humidity, led):
-    """
-    Args:
-        temperature: temperature get from the sensor in "c"
-        humidity: humidity get from the sensor in "%"
-        led: LED to control
-    """
-    # Print information
-    print("Temperature:", temperature)
-    print("Humidity:", humidity)
-    led2 = PWMLED()
-    # Turn on the LED
-    led.value = 1.0
-
-
-# --------------------------------
-# Ne pas modifier
-
-
-if __name__ == "__main__":
-    instance = DHT11(pin=4)
-    led = PWMLED(17)
-
-    # Wait 3s for init
-    print("Wait 3s...")
-    time.sleep(3)
-
-    try:
-        while True:
-            result = instance.read()
-            if result.is_valid():
-                step(result.temperature, result.humidity, led)
-            time.sleep(3)
-
-    except KeyboardInterrupt:
-        print("Cleanup")
-        instance.stop()
+try:
+    while True:
+        motion_detect, obj = motion.get_frame()
+        if motion_detect:
+            # Draw rectangle
+            cv2.rectangle(obj["frame"],
+                          pt1=(obj["x"], obj["y"]),
+                          pt2=(obj["x"] + obj["width"], obj["y"] + obj["height"]),
+                          color=motion.GREEN_COLOR,
+                          thickness=2)
+            motion.save_frame(obj["frame"])
+            # led_move.value = 1.0
+            # led_not_move.value = 0.0
+        else:
+            pass
+            # led_move.value = 0.0
+            # led_not_move.value = 1.0
+except KeyboardInterrupt:
+    print("Cleanup")
