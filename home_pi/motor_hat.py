@@ -31,34 +31,56 @@ class PCA9685:
         self.bus = smbus.SMBus(1)
         self.address = address
         self.debug = debug
-        if (self.debug):
+        if self.debug:
             print("Reseting PCA9685")
         self.write(self.__MODE1, 0x00)
 
     def write(self, reg, value):
-        "Writes an 8-bit value to the specified register/address"
+        """
+        Writes an 8-bit value to the specified register/address
+        Args:
+            reg:
+            value:
+
+        Returns:
+
+        """
         self.bus.write_byte_data(self.address, reg, value)
-        if (self.debug):
+        if self.debug:
             print("I2C: Write 0x%02X to register 0x%02X" % (value, reg))
 
     def read(self, reg):
-        "Read an unsigned byte from the I2C device"
+        """
+        Read an unsigned byte from the I2C device
+        Args:
+            reg:
+
+        Returns:
+
+        """
         result = self.bus.read_byte_data(self.address, reg)
-        if (self.debug):
+        if self.debug:
             print("I2C: Device 0x%02X returned 0x%02X from reg 0x%02X" % (self.address, result & 0xFF, reg))
         return result
 
     def setPWMFreq(self, freq):
-        "Sets the PWM frequency"
+        """
+        Sets the PWM frequency
+        Args:
+            freq:
+
+        Returns:
+
+        """
         prescaleval = 25000000.0  # 25MHz
         prescaleval = prescaleval / 4096.0  # 12-bit
         prescaleval = prescaleval / float(freq)
         prescaleval = prescaleval - 1.0
-        if (self.debug):
+        if self.debug:
             print("Setting PWM frequency to %d Hz" % freq)
             print("Estimated pre-scale: %d" % prescaleval)
         prescale = math.floor(prescaleval + 0.5)
-        if (self.debug):
+        if self.debug:
             print("Final pre-scale: %d" % prescale)
 
         oldmode = self.read(self.__MODE1);
@@ -70,19 +92,73 @@ class PCA9685:
         self.write(self.__MODE1, oldmode | 0x80)
 
     def setPWM(self, channel, on, off):
-        "Sets a single PWM channel"
+        """
+        Sets a single PWM channel
+        Args:
+            channel:
+            on:
+            off:
+
+        Returns:
+
+        """
         self.write(self.__LED0_ON_L + 4 * channel, on & 0xFF)
         self.write(self.__LED0_ON_H + 4 * channel, 0xff & (on >> 8))
         self.write(self.__LED0_OFF_L + 4 * channel, off & 0xFF)
         self.write(self.__LED0_OFF_H + 4 * channel, 0xff & (off >> 8))
-        if (self.debug):
+        if self.debug:
             print("channel: %d  LED_ON: %d LED_OFF: %d" % (channel, on, off))
 
     def setDutycycle(self, channel, pulse):
         self.setPWM(channel, 0, int(pulse * int(4096 / 100)))
 
     def setLevel(self, channel, value):
-        if (value == 1):
+        if value == 1:
             self.setPWM(channel, 0, 4095)
         else:
             self.setPWM(channel, 0, 0)
+
+
+class MotorDriver:
+    FORWARD = 'forward'
+    BACKWARD = 'backward'
+
+    def __init__(self):
+
+        self.pwm = PCA9685(0x40, debug=False)
+        self.pwm.setPWMFreq(50)
+
+        self.PWMA = 0
+        self.PWMB = 5
+
+        self.AIN1 = 1
+        self.AIN2 = 2
+
+        self.BIN1 = 3
+        self.BIN2 = 4
+
+    def motor_run(self, motor, index, speed):
+        if speed > 100:
+            return
+        if motor == 0:
+            self.pwm.setDutycycle(self.PWMA, speed)
+            if index == self.FORWARD:
+                self.pwm.setLevel(self.AIN1, 0)
+                self.pwm.setLevel(self.AIN2, 1)
+            else:
+                self.pwm.setLevel(self.AIN1, 1)
+                self.pwm.setLevel(self.AIN2, 0)
+        else:
+            self.pwm.setDutycycle(self.PWMB, speed)
+            if index == self.FORWARD:
+                self.pwm.setLevel(self.BIN1, 0)
+                self.pwm.setLevel(self.BIN2, 1)
+            else:
+                self.pwm.setLevel(self.BIN1, 1)
+                self.pwm.setLevel(self.BIN2, 0)
+
+    def motor_stop(self, motor):
+        if motor == 0:
+            self.pwm.setDutycycle(self.PWMA, 0)
+        else:
+            self.pwm.setDutycycle(self.PWMB, 0)
