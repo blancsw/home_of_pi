@@ -1,22 +1,55 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import threading
 
-from flask import Flask, render_template, request
+from cv2 import cv2
+from flask import Flask, render_template, request, Response
 from flask_socketio import SocketIO, emit
+import time
 
 # from home_pi.motor_hat import MotorDriver
-
+from home_pi.camera_stream import CameraStream
 
 async_mode = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
+lock = threading.Lock()
 socketio = SocketIO(app, async_mode=async_mode)
+camera = CameraStream()
+
+
+def generate():
+    # loop over frames from the output stream
+    while True:
+        # wait until the lock is acquired
+        with lock:
+            frame = camera.get_frame()
+            # check if the output frame is available, otherwise skip
+            # the iteration of the loop
+            if frame is None:
+                continue
+            # encode the frame in JPEG format
+            (flag, encodedImage) = cv2.imencode(".jpg", frame)
+            # ensure the frame was successfully encoded
+            if not flag:
+                continue
+        time.sleep(0.2)
+        # yield the output frame in the byte format
+        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' +
+               bytearray(encodedImage) + b'\r\n')
 
 
 @app.route('/')
 def index():
     return render_template('index.html', async_mode=socketio.async_mode)
+
+
+@app.route("/video_feed")
+def video_feed():
+    # return the response generated along with the specific media
+    # type (mime type)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
 @socketio.event

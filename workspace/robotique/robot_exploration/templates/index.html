@@ -64,7 +64,7 @@
                 start_time = (new Date).getTime();
                 $('#transport').text(socket.io.engine.transport.name);
                 socket.emit('my_ping');
-            }, 1000);
+            }, 2000);
 
             // Handler for the "pong" message. When the pong is received, the
             // time from the ping is stored, and the average of the last 30
@@ -92,7 +92,9 @@
 <i class="fas fa-arrow-circle-up fa-5x"></i><br>
 <i class="fas fa-arrow-circle-down fa-5x"></i><br>
 <i class="fas fa-arrow-circle-left fa-5x"></i><br>
-<i class="fas fa-arrow-circle-right fa-5x"></i><br>
+<i class="fas fa-arrow-circle-right fa-5x"></i>
+
+<img src="{{ url_for('video_feed') }}">
 
 </body>
 </html>
