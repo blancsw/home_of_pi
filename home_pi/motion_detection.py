@@ -47,9 +47,16 @@ class MotionDetection:
 
     def get_frame(self):
         """
-
-        Returns:
-
+        Get camera frame and look if a movement was detected
+        Returns: (tuple)
+            - (bool): True a motion was detect, False no movement
+            - (dict): {
+                        "frame": Frame of the camera,
+                        "x": movement start position X,
+                        "y": movement start position Y,
+                        "width": Width of the bounding box,
+                        "height": Height of the bounding box
+                       }
         """
         # grab the current frame, resize it, and initialize a
         # boolean used to indicate if the consecutive frames
@@ -91,7 +98,13 @@ class MotionDetection:
                     "width": w,
                     "height": h
                 }
-        return False, {}
+        return False, {
+            "frame": frame,
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+        }
 
     def save_frame(self, frame):
         """
